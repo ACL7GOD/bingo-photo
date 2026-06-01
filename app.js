@@ -1,6 +1,6 @@
 // --- CONFIGURATION --- 
-const SUPABASE_PROJECT_ID = "VOTRE_PROJECT_ID_ICI";
-const SUPABASE_KEY = "VOTRE_CLE_PUBLIABLE_ICI";
+const SUPABASE_PROJECT_ID = "zgdjtfyidavwtphfrrvf";
+const SUPABASE_KEY = "sb_publishable_4sW5qMxacEbyWez5TruoAQ_lCQAfJl5";
 const supabaseClient = supabase.createClient(`https://${SUPABASE_PROJECT_ID}.supabase.co`, SUPABASE_KEY);
 
 let currentUser = null;
@@ -143,7 +143,7 @@ async function handleSignup() {
 async function handleLogout() {
     const confirmed = await showConfirm("Veux-tu vraiment te déconnecter ?", "Déconnexion");
     if (!confirmed) return;
-    
+
     await supabaseClient.auth.signOut();
     location.reload();
 }
