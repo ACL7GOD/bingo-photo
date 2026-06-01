@@ -1,6 +1,6 @@
 # 📸 Bingo Photos
 
-Une application web de Bingo Photo : 25 photos à trouver et envoyer pour remplir sa grille et gagner le plus de points !
+Une application web de Bingo Photo : 25 photos à trouver et envoyer pour remplir sa grille et gagner le plus de points !
 
 ![Aperçu de Bingo Tapages](https://iili.io/C3yhVZ7.png)
 
