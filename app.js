@@ -1,7 +1,7 @@
 // --- CONFIGURATION --- 
-const SUPABASE_URL = "VOTRE_PROJECT_URL_ICI";
-const SUPABASE_KEY = "VOTRE_CLE_ANON_ICI";
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_PROJECT_ID = "VOTRE_PROJECT_ID_ICI";
+const SUPABASE_KEY = "VOTRE_CLE_PUBLIABLE_ICI";
+const supabaseClient = supabase.createClient(`https://${SUPABASE_PROJECT_ID}.supabase.co`, SUPABASE_KEY);
 
 let currentUser = null;
 let selectedIdx = null;
@@ -165,7 +165,31 @@ async function checkUser() {
 
         const displayName = formatDisplayName(user.user_metadata?.username || user.email);
         document.getElementById('welcome-msg').innerText = `Salut, ${displayName} !`;
-        switchTab('perso');
+
+        // Vérifier si le compte est validé dans la table profiles
+        try {
+            const { data: profile } = await supabaseClient
+                .from('profiles')
+                .select('approved')
+                .eq('id', user.id)
+                .single();
+
+            if (profile && profile.approved) {
+                // Le compte est approuvé : afficher le jeu
+                document.getElementById('game-content-wrapper').style.display = 'block';
+                document.getElementById('approval-pending-section').style.display = 'none';
+                switchTab('perso');
+            } else {
+                // Le compte est en attente : afficher l'écran d'attente
+                document.getElementById('game-content-wrapper').style.display = 'none';
+                document.getElementById('approval-pending-section').style.display = 'block';
+            }
+        } catch (err) {
+            console.error("Erreur lors de la vérification du profil :", err);
+            // Par sécurité, on cache le jeu si la requête échoue
+            document.getElementById('game-content-wrapper').style.display = 'none';
+            document.getElementById('approval-pending-section').style.display = 'block';
+        }
     }
 }
 
