@@ -804,6 +804,13 @@ function toggleEmojiMenu(cellId, containerId, parentEl) {
     menu.appendChild(gridContainer);
     parentEl.appendChild(menu);
 
+    // Ajustement si le menu dépasse l'écran à droite
+    const rect = menu.getBoundingClientRect();
+    if (rect.right > window.innerWidth - 10) {
+        menu.style.left = 'auto';
+        menu.style.right = '0';
+    }
+
     document.addEventListener('click', closeAllEmojiMenus, { once: true });
 }
 
