@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📸 Bingo Photo Tapages</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div id="toast-container"></div>
+
+    <!-- OVERLAY GALERIE -->
+    <div id="gallery-overlay" class="hidden">
+        <div class="gallery-modal">
+            <h2 id="gallery-title">Galerie</h2>
+            <div id="gallery-content" class="gallery-grid"></div>
+            <button class="btn-secondary" onclick="closeGallery()" style="margin-top: 20px;">Fermer</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>📸 Bingo Tapages</h1>
+
+        <div id="auth-section">
+            <div id="login-view" class="auth-view">
+                <h2>Connexion</h2>
+                <input type="text" id="login-email" placeholder="Pseudo">
+                <input type="password" id="login-password" placeholder="Mot de passe">
+                <button class="btn-primary" onclick="handleLogin()">Se connecter</button>
+                <p class="toggle-link" onclick="showSignup()">Pas encore de compte ? S'inscrire</p>
+            </div>
+
+            <div id="signup-view" class="auth-view hidden">
+                <h2>Créer un compte</h2>
+                <input type="text" id="signup-email" placeholder="Pseudo">
+                <input type="password" id="signup-password" placeholder="Mot de passe">
+                <button class="btn-primary" onclick="handleSignup()">S'inscrire</button>
+                <p class="toggle-link" onclick="showLogin()">Déjà un compte ? Se connecter</p>
+            </div>
+        </div>
+
+        <div id="game-section" style="display:none;">
+            <p id="welcome-msg"></p>
+
+            <!-- NAVIGATION -->
+            <div class="tabs">
+                <div id="tab-perso" class="tab active" onclick="switchTab('perso')">Mon Bingo</div>
+                <div id="tab-global" class="tab" onclick="switchTab('global')">Communauté</div>
+                <div id="tab-leaderboard" class="tab" onclick="switchTab('leaderboard')">Classement</div>
+            </div>
+
+            <!-- GRILLE PERSO -->
+            <div id="perso-grid-container">
+                <div class="grid" id="grid"></div>
+                
+                <div id="upload-zone" style="display:none;">
+                    <h3 id="task-title"></h3>
+                    
+                    <div id="upload-preview-section" style="display:none;">
+                        <img id="upload-preview-img" src="" style="width: 100%; border-radius: 8px; margin-bottom: 10px;">
+                        <button class="btn-primary" onclick="showUploadInput()">Changer la photo</button>
+                    </div>
+
+                    <div id="upload-input-section">
+                        <input type="file" id="file-input" accept="image/*">
+                        <button class="btn-primary" onclick="uploadPhoto()">Envoie ta photo</button>
+                    </div>
+
+                    <button id="btn-delete" class="btn-danger" style="display:none;" onclick="deletePhoto()">Supprimer la photo</button>
+                    <button class="btn-secondary" onclick="closeUpload()">Annuler</button>
+                </div>
+            </div>
+
+            <!-- GRILLE GLOBALE -->
+            <div id="global-grid-container" class="hidden">
+                <div class="grid" id="global-grid"></div>
+                <p style="margin-top: 15px; font-size: 13px; color: var(--text-muted);">
+                    Clique sur une case pour voir les photos des autres !
+                </p>
+            </div>
+
+            <!-- LEADERBOARD -->
+            <div id="leaderboard-container" class="hidden">
+                <div id="leaderboard-list" class="leaderboard-list">
+                    <!-- Rempli par JS -->
+                </div>
+            </div>
+
+            <!-- VUE GRILLE UTILISATEUR -->
+            <div id="user-view-container" class="hidden">
+                <div class="user-view-header">
+                    <button class="btn-secondary" onclick="closeUserGrid()" style="width: auto; margin-bottom: 10px;">← Retour au classement</button>
+                    <h2 id="user-view-title">Bingo de ...</h2>
+                </div>
+                <div class="grid" id="user-grid"></div>
+                
+                <div id="user-photo-preview" class="hidden" style="margin-top: 20px; padding: 15px; background: #f8fbff; border-radius: 12px; border: 1px solid #e1e8f0;">
+                    <h3 id="user-photo-title" style="margin-top: 0;"></h3>
+                    <img id="user-photo-img" src="" style="width:100%; border-radius: 8px;">
+                </div>
+            </div>
+
+            <button class="btn-secondary" onclick="handleLogout()" style="margin-top:20px;">Déconnexion</button>
+        </div>
+    </div>
+
+    <!-- MODAL DE CONFIRMATION -->
+    <div id="modal-overlay" class="hidden">
+        <div class="modal">
+            <h2 id="modal-title">Confirmation</h2>
+            <p id="modal-message"></p>
+            <div class="modal-buttons">
+                <button id="modal-btn-cancel" class="btn-secondary">Annuler</button>
+                <button id="modal-btn-confirm" class="btn-primary">Confirmer</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
