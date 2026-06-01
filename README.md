@@ -1,4 +1,23 @@
-# Déploiement du Bingo Photo de A à Z
+# 📸 Bingo Photos
+
+Une application web de Bingo Photo : 25 photos à trouver et envoyer pour remplir sa grille et gagner le plus de points !
+
+![Aperçu de Bingo Tapages](https://iili.io/C3yhVZ7.png)
+
+## À propos du projet
+
+**Bingo Tapages** permet aux joueurs de relever des défis photo en remplissant une grille interactive de Bingo.
+
+### Fonctionnalités principales :
+- 📸 **Ta grille de Bingo** : Complète ta grille de 25 photos.
+- 👥 **Les grilles de tous les joueurs** : Visualise les photos des autres joueurs.
+- 🏆 **Classement en temps réel** : Classement pour suivre la progression des participants.
+- 💬 **Réactions émojis** : Ajout d'émojis sur les photos des autres joueurs.
+- 📱 **Interface pour mobile** : Optimisée pour participer csur mobile.
+
+---
+
+# 🚀 Déploiement
 
 Ce guide vous accompagne pas à pas pour déployer et configurer une nouvelle instance du Bingo Photo.
 
@@ -290,3 +309,7 @@ Votre Bingo Photo est maintenant entièrement fonctionnel et en ligne. Vous pouv
 > [!IMPORTANT]
 > **Rappel de validation :**
 > N'oubliez pas de retourner à la section **[1.5 Valider et activer les joueurs](#15-valider-et-activer-les-joueurs-administrateur)** pour activer les comptes de vos joueurs dès qu'ils se seront inscrits pour la première fois !
+
+---
+
+Made with ❤️ by [Tapages Fanfare](https://www.instagram.com/tapagesfanfare/)

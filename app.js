@@ -658,7 +658,7 @@ function isValidEmoji(str) {
 async function loadReactions(cellId, containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
-    
+
     container.innerHTML = '<span style="font-size: 12px; color: #888;">Chargement...</span>';
 
     const { data: reactions, error } = await supabaseClient
@@ -676,8 +676,8 @@ async function loadReactions(cellId, containerId) {
     let myReaction = null;
 
     reactions.forEach(r => {
-        if (!isValidEmoji(r.emoji)) return; 
-        
+        if (!isValidEmoji(r.emoji)) return;
+
         if (!emojiCounts[r.emoji]) {
             emojiCounts[r.emoji] = 0;
             emojiReactors[r.emoji] = [];
@@ -716,11 +716,11 @@ function renderReactions(cellId, containerId, emojiCounts, emojiReactors, myReac
         const isMine = (emoji === myReaction);
         badge.className = 'reaction-badge' + (isMine ? ' reacted-by-me' : '');
         badge.innerHTML = `${emoji} <span>${emojiCounts[emoji]}</span>`;
-        
+
         // Long press pour voir qui a réagi sans déclencher le clic normal
         let pressTimer;
         let isLongPress = false;
-        
+
         badge.onpointerdown = (e) => {
             if (e.button !== 0 && e.pointerType === 'mouse') return;
             isLongPress = false;
@@ -732,7 +732,7 @@ function renderReactions(cellId, containerId, emojiCounts, emojiReactors, myReac
         badge.onpointerup = () => clearTimeout(pressTimer);
         badge.onpointerleave = () => clearTimeout(pressTimer);
         badge.onpointercancel = () => clearTimeout(pressTimer);
-        
+
         badge.onclick = (e) => {
             if (isLongPress) {
                 e.preventDefault();
@@ -776,8 +776,8 @@ function toggleEmojiMenu(cellId, containerId, parentEl) {
     const menu = document.createElement('div');
     menu.className = 'emoji-picker-menu';
     menu.id = 'active-emoji-menu';
-    
-    const allEmojis = ['❤️', '😂', '😮', '👍', '👎', '🎉', '🔥', '👀', '💯', '✨', '😍', '😭', '😎', '🤔', '🙌', '👏', '🙏', '💪', '🥳', '🤯', '🤢', '🤡', '👽', '👻', '💩', '🍻', '🍷', '🥂', '🍕', '🍔', '🍟', '🍩', '🎂', '🐶', '🐱', '🐒', '🙈', '🙉', '🙊', '🚀', '⭐', '☀️', '🌈'];
+
+    const allEmojis = ['❤️', '😂', '😮', '👍', '👎', '🎉', '🔥', '👀', '💯', '✨', '😍', '😭', '😎', '🤔', '🙌', '👏', '🙏', '💪', '🥳', '🤯', '🤢', '🤡', '👽', '👻', '💩', '🍻', '🍷', '🥂', '🍕', '🍔', '🍟', '🍩', '🎂', '🐶', '🐱', '🐒', '🙈', '🙉', '🙊', '🚀', '⭐', '☀️', '🌈', '🧌'];
 
     const gridContainer = document.createElement('div');
     gridContainer.style.display = 'grid';
@@ -856,7 +856,7 @@ function showReactionsModal(reactionsList) {
     overlay.style.display = 'flex';
     overlay.style.alignItems = 'center';
     overlay.style.justifyContent = 'center';
-    
+
     const modal = document.createElement('div');
     modal.style.backgroundColor = 'white';
     modal.style.borderRadius = '12px';
@@ -867,19 +867,19 @@ function showReactionsModal(reactionsList) {
     modal.style.display = 'flex';
     modal.style.flexDirection = 'column';
     modal.style.boxShadow = '0 10px 25px rgba(0,0,0,0.2)';
-    
+
     const title = document.createElement('h3');
     title.innerText = 'Réactions';
     title.style.marginTop = '0';
     title.style.marginBottom = '15px';
     title.style.textAlign = 'center';
     modal.appendChild(title);
-    
+
     const listContainer = document.createElement('div');
     listContainer.style.overflowY = 'auto';
     listContainer.style.flexGrow = '1';
     listContainer.style.paddingRight = '5px';
-    
+
     if (reactionsList.length === 0) {
         listContainer.innerHTML = '<p style="text-align:center; color:#888; font-size:14px;">Aucune réaction</p>';
     } else {
@@ -895,7 +895,7 @@ function showReactionsModal(reactionsList) {
         });
     }
     modal.appendChild(listContainer);
-    
+
     const closeBtn = document.createElement('button');
     closeBtn.className = 'btn-secondary';
     closeBtn.innerText = 'Fermer';
@@ -904,14 +904,14 @@ function showReactionsModal(reactionsList) {
     closeBtn.style.padding = '10px';
     closeBtn.onclick = () => document.body.removeChild(overlay);
     modal.appendChild(closeBtn);
-    
+
     overlay.appendChild(modal);
-    
+
     overlay.onclick = (e) => {
         if (e.target === overlay) {
             document.body.removeChild(overlay);
         }
     };
-    
+
     document.body.appendChild(overlay);
 }
