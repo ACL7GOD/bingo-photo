@@ -686,6 +686,8 @@ async function loadReactions(cellId, containerId) {
 
         if (r.reactor_email) {
             emojiReactors[r.emoji].push(formatDisplayName(r.reactor_email));
+        } else {
+            emojiReactors[r.emoji].push("Anonyme");
         }
 
         if (currentUser && r.reactor_id === currentUser.id) {
@@ -707,13 +709,16 @@ function renderReactions(cellId, containerId, emojiCounts, emojiReactors, myReac
         const isMine = (emoji === myReaction);
         badge.className = 'reaction-badge' + (isMine ? ' reacted-by-me' : '');
         badge.innerHTML = `${emoji} <span>${emojiCounts[emoji]}</span>`;
-        badge.onclick = () => toggleReaction(cellId, emoji, containerId);
         
-        // Long press pour voir qui a réagi
+        // Long press pour voir qui a réagi sans déclencher le clic normal
         let pressTimer;
+        let isLongPress = false;
+        
         badge.onpointerdown = (e) => {
             if (e.button !== 0 && e.pointerType === 'mouse') return;
+            isLongPress = false;
             pressTimer = setTimeout(() => {
+                isLongPress = true;
                 const names = emojiReactors[emoji].length > 0 ? emojiReactors[emoji].join(', ') : 'Anonyme';
                 showToast(`${emoji} : ${names}`, "success");
             }, 500);
@@ -721,6 +726,15 @@ function renderReactions(cellId, containerId, emojiCounts, emojiReactors, myReac
         badge.onpointerup = () => clearTimeout(pressTimer);
         badge.onpointerleave = () => clearTimeout(pressTimer);
         badge.onpointercancel = () => clearTimeout(pressTimer);
+        
+        badge.onclick = (e) => {
+            if (isLongPress) {
+                e.preventDefault();
+                return;
+            }
+            toggleReaction(cellId, emoji, containerId);
+        };
+
         badge.oncontextmenu = (e) => {
             e.preventDefault(); // Empêcher le menu natif sur mobile au long press
         };
