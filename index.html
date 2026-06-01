@@ -25,20 +25,29 @@
         <h1>📸 Bingo Tapages</h1>
 
         <div id="auth-section">
-            <div id="login-view" class="auth-view">
-                <h2>Connexion</h2>
-                <input type="text" id="login-email" placeholder="Pseudo">
-                <input type="password" id="login-password" placeholder="Mot de passe">
-                <button class="btn-primary" onclick="handleLogin()">Se connecter</button>
-                <p class="toggle-link" onclick="showSignup()">Pas encore de compte ? S'inscrire</p>
+            <!-- ÉTAPE 1 : Pseudo uniquement -->
+            <div id="auth-step-pseudo" class="auth-view">
+                <h2>Rejoindre le Bingo</h2>
+                <input type="text" id="auth-pseudo" placeholder="Pseudo (ex: Jean)">
+                <button class="btn-primary" onclick="checkPseudo()">Continuer</button>
             </div>
 
-            <div id="signup-view" class="auth-view hidden">
+            <!-- ÉTAPE 2 : Connexion (Si le pseudo existe) -->
+            <div id="auth-step-login" class="auth-view hidden">
+                <h2>Connexion</h2>
+                <p class="auth-subtitle">Ravi de te revoir, <strong id="login-pseudo-display"></strong> !</p>
+                <input type="password" id="login-password" placeholder="Mot de passe">
+                <button class="btn-primary" onclick="handleLogin()">Se connecter</button>
+                <p class="toggle-link" onclick="goBackToPseudo()">← Ce n'est pas mon pseudo</p>
+            </div>
+
+            <!-- ÉTAPE 2 : Inscription (Si le pseudo n'existe pas) -->
+            <div id="auth-step-signup" class="auth-view hidden">
                 <h2>Créer un compte</h2>
-                <input type="text" id="signup-email" placeholder="Pseudo">
-                <input type="password" id="signup-password" placeholder="Mot de passe">
-                <button class="btn-primary" onclick="handleSignup()">S'inscrire</button>
-                <p class="toggle-link" onclick="showLogin()">Déjà un compte ? Se connecter</p>
+                <p class="auth-subtitle">Le pseudo <strong id="signup-pseudo-display"></strong> est disponible !</p>
+                <input type="password" id="signup-password" placeholder="Choisis un mot de passe">
+                <button class="btn-primary" onclick="handleSignup()">Créer mon compte</button>
+                <p class="toggle-link" onclick="goBackToPseudo()">← Changer de pseudo</p>
             </div>
         </div>
 

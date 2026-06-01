@@ -75,6 +75,16 @@ h1 {
     gap: 10px;
 }
 
+.auth-subtitle {
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+}
+
+.auth-subtitle strong {
+    color: var(--primary-color);
+}
+
 .hidden {
     display: none !important;
 }

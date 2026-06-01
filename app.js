@@ -7,13 +7,13 @@ let currentUser = null;
 let selectedIdx = null;
 const bingoItems = [
     { title: "Un chien dans une voiture", emoji: "🐶🚗" },
-    { title: "Un bol de soupe", emoji: "🥣" },
+    { title: "Du love chez les Tapages", emoji: "❤️" },
     { title: "Tes pieds dans les chaussures d'un autre Tapage", emoji: "👞" },
     { title: "Un Tapage pas encore couché au lever du soleil", emoji: "🥱" },
     { title: "Un selfie grimace avec un autre Tapage", emoji: "🥸" },
-    { title: "Un berliner (le gateau)", emoji: "🍰" },
+    { title: "Un repas de croûtard", emoji: "🐀" },
     { title: "Un personnage de Shrek dans la vraie vie", emoji: "🧌👹" },
-    { title: "Un nom de rue qui fait penser aux Tapages", emoji: "🪧" },
+    { title: "Un panneau qui fait penser aux Tapages", emoji: "🪧" },
     { title: "Une boîte d'Oeufs (ceux qui se mangent)", emoji: "🥚" },
     { title: "Un Tapage qui cherche quelque chose qu'iel a perdu", emoji: "👓" },
     { title: "Le sosie d'un Tapages", emoji: "👥" },
@@ -21,13 +21,13 @@ const bingoItems = [
     { title: "Ton magnifique vernis", emoji: "💅" },
     { title: "Un Tapage qui ne joue pas du bon instrument", emoji: "🎷🎺🖇️🥁" },
     { title: "Du munster (le fromage)", emoji: "🧀" },
-    { title: "Deux Tapages sur un vélo", emoji: "🚴🚴" },
+    { title: "Deux Tapages sur un vélo", emoji: "👥🚴" },
     { title: "Un batiment historique", emoji: "🏦" },
     { title: "Un Tapage en claquettes/tongs + chaussettes", emoji: "🩴🧦" },
     { title: "Une paréidolie", emoji: "😀" },
     { title: "Le sticker Tapages dans un lieu insolite", emoji: "🧐" },
-    { title: "Claude la coccinelle", emoji: "🐞" },
-    { title: "Un gant", emoji: "🧤" },
+    { title: "Météo émotionnelle", emoji: "🌤️" },
+    { title: "Un tire sur mon doigt", emoji: "👉🤏" },
     { title: "Un tout petit animal", emoji: "🪳" },
     { title: "Un selfie de pupitre (Sissa tu peux venir avec les Sax)", emoji: "👯‍♂️" },
     { title: "Un Tapage qui dort au soleil", emoji: "😴🌞" }
@@ -40,16 +40,26 @@ window.onload = () => {
 };
 
 function setupEventListeners() {
-    const authInputs = document.querySelectorAll('#auth-section input');
-    authInputs.forEach(input => {
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                const isLoginView = !document.getElementById('login-view').classList.contains('hidden');
-                if (isLoginView) handleLogin();
-                else handleSignup();
-            }
+    const pseudoInput = document.getElementById('auth-pseudo');
+    if (pseudoInput) {
+        pseudoInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') checkPseudo();
         });
-    });
+    }
+
+    const loginPass = document.getElementById('login-password');
+    if (loginPass) {
+        loginPass.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleLogin();
+        });
+    }
+
+    const signupPass = document.getElementById('signup-password');
+    if (signupPass) {
+        signupPass.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleSignup();
+        });
+    }
 }
 
 // --- NOTIFICATIONS (TOASTS) ---
@@ -99,8 +109,54 @@ function showConfirm(message, title = "Confirmation") {
 }
 
 // --- AUTHENTIFICATION ---
+async function checkPseudo() {
+    const pseudoInput = document.getElementById('auth-pseudo');
+    const pseudo = pseudoInput.value.trim();
+    if (!pseudo) return showToast("Saisis ton pseudo !", "error");
+
+    try {
+        // Recherche insensible à la casse du pseudo dans la table des profils publics
+        const { data, error } = await supabaseClient
+            .from('profiles')
+            .select('username')
+            .ilike('username', pseudo)
+            .maybeSingle();
+
+        if (error) throw error;
+
+        // Masquer l'étape 1 (Saisie du pseudo)
+        document.getElementById('auth-step-pseudo').classList.add('hidden');
+
+        if (data) {
+            // Le pseudo existe -> Aller à l'écran de Connexion
+            document.getElementById('login-pseudo-display').innerText = data.username;
+            document.getElementById('auth-step-login').classList.remove('hidden');
+            document.getElementById('login-password').value = '';
+            document.getElementById('login-password').focus();
+        } else {
+            // Le pseudo n'existe pas -> Aller à l'écran d'Inscription
+            document.getElementById('signup-pseudo-display').innerText = pseudo;
+            document.getElementById('auth-step-signup').classList.remove('hidden');
+            document.getElementById('signup-password').value = '';
+            document.getElementById('signup-password').focus();
+        }
+    } catch (err) {
+        console.error("Erreur de vérification du pseudo :", err);
+        showToast("Erreur lors de la vérification du pseudo", "error");
+    }
+}
+
+function goBackToPseudo() {
+    document.getElementById('auth-step-login').classList.add('hidden');
+    document.getElementById('auth-step-signup').classList.add('hidden');
+    document.getElementById('auth-step-pseudo').classList.remove('hidden');
+    document.getElementById('login-password').value = '';
+    document.getElementById('signup-password').value = '';
+    document.getElementById('auth-pseudo').focus();
+}
+
 async function handleLogin() {
-    const pseudo = document.getElementById('login-email').value;
+    const pseudo = document.getElementById('login-pseudo-display').innerText.trim();
     const password = document.getElementById('login-password').value;
 
     if (!pseudo || !password) return showToast("Remplis tous les champs !", "error");
@@ -118,7 +174,7 @@ async function handleLogin() {
 }
 
 async function handleSignup() {
-    const pseudo = document.getElementById('signup-email').value;
+    const pseudo = document.getElementById('signup-pseudo-display').innerText.trim();
     const password = document.getElementById('signup-password').value;
 
     if (!pseudo || !password) return showToast("Remplis tous les champs !", "error");
@@ -135,8 +191,9 @@ async function handleSignup() {
 
     if (error) showToast(error.message, "error");
     else {
-        showToast("Inscription réussie ! Tu peux maintenant te connecter.", "success");
-        showLogin();
+        showToast("Inscription réussie !", "success");
+        // Connexion automatique après inscription (Supabase connecte automatiquement l'utilisateur à l'inscription)
+        checkUser();
     }
 }
 
@@ -576,8 +633,8 @@ async function uploadPhoto() {
 window.handleLogin = handleLogin;
 window.handleSignup = handleSignup;
 window.handleLogout = handleLogout;
-window.showSignup = showSignup;
-window.showLogin = showLogin;
+window.checkPseudo = checkPseudo;
+window.goBackToPseudo = goBackToPseudo;
 window.uploadPhoto = uploadPhoto;
 window.closeUpload = closeUpload;
 window.switchTab = switchTab;
