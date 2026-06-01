@@ -650,7 +650,7 @@ window.showUserPhoto = showUserPhoto;
 
 // --- EMOJI VALIDATION & REACTIONS ---
 
-const emojiRegex = /^\p{Extended_Pictographic}(\u200d\p{Extended_Pictographic})*$/u;
+const emojiRegex = /^[\p{Extended_Pictographic}\p{Emoji_Modifier}\uFE0F\u200D]+$/u;
 function isValidEmoji(str) {
     return typeof str === 'string' && str.trim() !== '' && emojiRegex.test(str.trim());
 }
@@ -672,23 +672,31 @@ async function loadReactions(cellId, containerId) {
     }
 
     const emojiCounts = {};
+    const emojiReactors = {};
     let myReaction = null;
 
     reactions.forEach(r => {
         if (!isValidEmoji(r.emoji)) return; 
         
-        if (!emojiCounts[r.emoji]) emojiCounts[r.emoji] = 0;
+        if (!emojiCounts[r.emoji]) {
+            emojiCounts[r.emoji] = 0;
+            emojiReactors[r.emoji] = [];
+        }
         emojiCounts[r.emoji]++;
+
+        if (r.reactor_email) {
+            emojiReactors[r.emoji].push(formatDisplayName(r.reactor_email));
+        }
 
         if (currentUser && r.reactor_id === currentUser.id) {
             myReaction = r.emoji;
         }
     });
 
-    renderReactions(cellId, containerId, emojiCounts, myReaction);
+    renderReactions(cellId, containerId, emojiCounts, emojiReactors, myReaction);
 }
 
-function renderReactions(cellId, containerId, emojiCounts, myReaction) {
+function renderReactions(cellId, containerId, emojiCounts, emojiReactors, myReaction) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
@@ -700,6 +708,23 @@ function renderReactions(cellId, containerId, emojiCounts, myReaction) {
         badge.className = 'reaction-badge' + (isMine ? ' reacted-by-me' : '');
         badge.innerHTML = `${emoji} <span>${emojiCounts[emoji]}</span>`;
         badge.onclick = () => toggleReaction(cellId, emoji, containerId);
+        
+        // Long press pour voir qui a réagi
+        let pressTimer;
+        badge.onpointerdown = (e) => {
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
+            pressTimer = setTimeout(() => {
+                const names = emojiReactors[emoji].length > 0 ? emojiReactors[emoji].join(', ') : 'Anonyme';
+                showToast(`${emoji} : ${names}`, "success");
+            }, 500);
+        };
+        badge.onpointerup = () => clearTimeout(pressTimer);
+        badge.onpointerleave = () => clearTimeout(pressTimer);
+        badge.onpointercancel = () => clearTimeout(pressTimer);
+        badge.oncontextmenu = (e) => {
+            e.preventDefault(); // Empêcher le menu natif sur mobile au long press
+        };
+
         container.appendChild(badge);
     });
 
@@ -708,7 +733,14 @@ function renderReactions(cellId, containerId, emojiCounts, myReaction) {
 
     const addBtn = document.createElement('div');
     addBtn.className = 'reaction-add-btn';
-    addBtn.innerHTML = '+ 😊';
+    addBtn.innerHTML = `
+        <svg version="1.0" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 800 800" preserveAspectRatio="xMidYMid meet">
+            <g transform="translate(0.000000,800.000000) scale(0.100000,-0.100000)" fill="currentColor" stroke="none">
+                <path d="M6059 6686 c-56 -20 -104 -53 -133 -91 -47 -61 -56 -104 -56 -266 l0 -149 -147 0 c-168 0 -205 -8 -265 -53 -150 -115 -123 -340 52 -421 51 -24 65 -26 207 -26 l152 0 3 -162 c3 -182 10 -206 75 -274 105 -107 278 -96 370 24 45 60 53 97 53 265 l0 147 149 0 c161 0 207 10 268 56 41 31 83 101 95 160 20 95 -43 208 -144 258 -49 25 -60 26 -210 26 l-158 0 0 158 c0 144 -2 161 -24 208 -29 63 -95 120 -160 139 -60 18 -80 18 -127 1z"/>
+                <path d="M3615 6434 c-521 -52 -948 -214 -1343 -508 -576 -430 -941 -1070 -1023 -1795 -15 -135 -6 -512 15 -644 90 -556 342 -1045 742 -1439 144 -142 219 -203 391 -318 814 -543 1869 -568 2710 -66 195 117 332 224 504 396 228 228 377 436 513 720 123 257 210 574 237 864 27 292 -9 659 -90 933 l-20 68 -106 -3 c-235 -8 -428 70 -586 236 -80 83 -119 142 -159 240 -25 62 -25 63 -100 95 -231 100 -389 286 -449 526 -26 104 -28 254 -5 356 26 116 34 104 -101 158 -194 78 -384 129 -600 163 -95 14 -445 27 -530 18z m-634 -1534 c116 -22 225 -103 274 -205 51 -103 50 -256 -2 -362 -36 -72 -125 -155 -200 -184 -78 -30 -225 -32 -295 -3 -165 68 -257 217 -245 395 9 141 81 256 197 318 89 48 170 60 271 41z m1811 -1 c208 -44 337 -243 299 -457 -23 -129 -100 -229 -218 -283 -150 -69 -335 -38 -448 76 -151 150 -150 411 1 562 91 90 233 130 366 102z m215 -1572 c31 -29 37 -41 40 -88 4 -48 1 -60 -32 -114 -202 -333 -536 -566 -936 -652 -116 -25 -427 -25 -549 0 -194 39 -420 137 -564 246 -144 108 -287 263 -370 399 -41 68 -48 133 -19 183 37 62 -34 59 1236 59 l1157 0 37 -33z"/>
+            </g>
+        </svg>
+    `;
     addBtn.onclick = (e) => {
         e.stopPropagation();
         toggleEmojiMenu(cellId, containerId, addBtnContainer);
@@ -725,55 +757,31 @@ function toggleEmojiMenu(cellId, containerId, parentEl) {
     menu.className = 'emoji-picker-menu';
     menu.id = 'active-emoji-menu';
     
-    const baseEmojis = ['❤️', '😂', '😮'];
-    baseEmojis.forEach(emoji => {
+    const allEmojis = ['❤️', '😂', '😮', '👍', '👎', '🎉', '🔥', '👀', '💯', '✨', '😍', '😭', '😎', '🤔', '🙌', '👏', '🙏', '💪', '🥳', '🤯', '🤢', '🤡', '👽', '👻', '💩', '🍻', '🍷', '🥂', '🍕', '🍔', '🍟', '🍩', '🎂', '🐶', '🐱', '🐒', '🙈', '🙉', '🙊', '🚀', '⭐', '☀️', '🌈'];
+
+    const gridContainer = document.createElement('div');
+    gridContainer.style.display = 'grid';
+    gridContainer.style.gridTemplateColumns = 'repeat(5, 1fr)';
+    gridContainer.style.gap = '8px';
+    gridContainer.style.maxHeight = '200px';
+    gridContainer.style.overflowY = 'auto';
+    gridContainer.style.padding = '4px';
+
+    allEmojis.forEach(emoji => {
         const opt = document.createElement('div');
         opt.className = 'emoji-option';
         opt.innerText = emoji;
+        opt.style.textAlign = 'center';
         opt.onclick = (e) => {
             e.stopPropagation();
             closeAllEmojiMenus();
             toggleReaction(cellId, emoji, containerId);
         };
-        menu.appendChild(opt);
+        gridContainer.appendChild(opt);
     });
 
-    const customContainer = document.createElement('div');
-    customContainer.className = 'custom-emoji-input-container';
-    customContainer.onclick = (e) => e.stopPropagation();
-
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.className = 'custom-emoji-input';
-    input.maxLength = 4;
-    input.placeholder = '...';
-    
-    const btnOk = document.createElement('button');
-    btnOk.className = 'custom-emoji-btn';
-    btnOk.innerText = 'OK';
-    btnOk.onclick = (e) => {
-        e.stopPropagation();
-        const val = input.value.trim();
-        if (isValidEmoji(val)) {
-            closeAllEmojiMenus();
-            toggleReaction(cellId, val, containerId);
-        } else {
-            showToast("Veuillez n'entrer qu'un seul emoji !", "error");
-        }
-    };
-
-    input.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-            btnOk.click();
-        }
-    });
-
-    customContainer.appendChild(input);
-    customContainer.appendChild(btnOk);
-    menu.appendChild(customContainer);
-
+    menu.appendChild(gridContainer);
     parentEl.appendChild(menu);
-    setTimeout(() => input.focus(), 50);
 
     document.addEventListener('click', closeAllEmojiMenus, { once: true });
 }
@@ -801,6 +809,7 @@ async function toggleReaction(cellId, emoji, containerId) {
         await supabaseClient.from('photo_reactions').insert({
             bingo_cell_id: cellId,
             reactor_id: currentUser.id,
+            reactor_email: currentUser.email,
             emoji: emoji
         });
     }

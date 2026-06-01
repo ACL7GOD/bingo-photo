@@ -166,6 +166,7 @@ CREATE TABLE IF NOT EXISTS public.photo_reactions (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     bingo_cell_id uuid REFERENCES public.bingo_cells(id) ON DELETE CASCADE NOT NULL,
     reactor_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    reactor_email text,
     emoji text NOT NULL,
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
     CONSTRAINT photo_reactions_cell_reactor_key UNIQUE (bingo_cell_id, reactor_id)
