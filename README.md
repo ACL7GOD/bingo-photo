@@ -93,7 +93,7 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
 -- Création de la table pour enregistrer les photos envoyées par case
 CREATE TABLE IF NOT EXISTS public.bingo_cells (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
     cell_index integer NOT NULL,
     image_url text,
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
@@ -186,7 +186,7 @@ USING (
 CREATE TABLE IF NOT EXISTS public.photo_reactions (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     bingo_cell_id uuid REFERENCES public.bingo_cells(id) ON DELETE CASCADE NOT NULL,
-    reactor_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    reactor_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
     emoji text NOT NULL,
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
     CONSTRAINT photo_reactions_cell_reactor_key UNIQUE (bingo_cell_id, reactor_id)

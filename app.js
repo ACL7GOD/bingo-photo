@@ -438,8 +438,15 @@ function calculateBingos(indices) {
 }
 
 async function loadLeaderboard() {
-    const { data: allSubmissions } = await supabaseClient.from('bingo_cells').select('user_id, cell_index, profiles(username)');
+    const { data: allSubmissions, error } = await supabaseClient.from('bingo_cells').select('user_id, cell_index, profiles(username)');
     const listDiv = document.getElementById('leaderboard-list');
+
+    if (error || !allSubmissions) {
+        listDiv.innerHTML = '<p style="color:red; text-align:center; padding: 20px;">Erreur lors du chargement (Vérifiez la configuration de la base de données).</p>';
+        console.error("Leaderboard fetch error:", error);
+        return;
+    }
+
     listDiv.innerHTML = '<p>Chargement du classement...</p>';
 
     // Grouper par utilisateur
