@@ -353,7 +353,7 @@ async function loadGlobalGrid() {
 async function showCellGallery(idx) {
     const { data: submissions } = await supabaseClient
         .from('bingo_cells')
-        .select('image_url, user_email')
+        .select('id, image_url, user_email')
         .eq('cell_index', idx);
 
     const overlay = document.getElementById('gallery-overlay');
@@ -369,8 +369,10 @@ async function showCellGallery(idx) {
         item.innerHTML = `
             <img src="${sub.image_url}">
             <p class="user-email">${formatDisplayName(sub.user_email)}</p>
+            <div class="reactions-container" id="reactions-${sub.id}"></div>
         `;
         galleryContent.appendChild(item);
+        loadReactions(sub.id, `reactions-${sub.id}`);
     });
 
     overlay.classList.remove('hidden');
@@ -459,7 +461,7 @@ async function viewUserGrid(userId, userEmail) {
 
         if (cellData) {
             cell.innerHTML = `<img src="${cellData.image_url}">`;
-            cell.onclick = () => showUserPhoto(cellData.image_url, bingoItems[i].title);
+            cell.onclick = () => showUserPhoto(cellData.id, cellData.image_url, bingoItems[i].title);
         } else {
             cell.innerHTML = `<div class="cell-label">${bingoItems[i].emoji}</div>`;
         }
@@ -468,12 +470,13 @@ async function viewUserGrid(userId, userEmail) {
     }
 }
 
-function showUserPhoto(url, title) {
+function showUserPhoto(id, url, title) {
     const preview = document.getElementById('user-photo-preview');
     document.getElementById('user-photo-title').innerText = title;
     document.getElementById('user-photo-img').src = url;
     preview.classList.remove('hidden');
     preview.scrollIntoView({ behavior: 'smooth' });
+    loadReactions(id, 'user-photo-reactions');
 }
 
 function closeUserGrid() {
@@ -644,3 +647,163 @@ window.deletePhoto = deletePhoto;
 window.closeUserGrid = closeUserGrid;
 window.showUploadInput = showUploadInput;
 window.showUserPhoto = showUserPhoto;
+
+// --- EMOJI VALIDATION & REACTIONS ---
+
+const emojiRegex = /^\p{Extended_Pictographic}(\u200d\p{Extended_Pictographic})*$/u;
+function isValidEmoji(str) {
+    return typeof str === 'string' && str.trim() !== '' && emojiRegex.test(str.trim());
+}
+
+async function loadReactions(cellId, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    container.innerHTML = '<span style="font-size: 12px; color: #888;">Chargement...</span>';
+
+    const { data: reactions, error } = await supabaseClient
+        .from('photo_reactions')
+        .select('*')
+        .eq('bingo_cell_id', cellId);
+
+    if (error) {
+        container.innerHTML = '';
+        return;
+    }
+
+    const emojiCounts = {};
+    let myReaction = null;
+
+    reactions.forEach(r => {
+        if (!isValidEmoji(r.emoji)) return; 
+        
+        if (!emojiCounts[r.emoji]) emojiCounts[r.emoji] = 0;
+        emojiCounts[r.emoji]++;
+
+        if (currentUser && r.reactor_id === currentUser.id) {
+            myReaction = r.emoji;
+        }
+    });
+
+    renderReactions(cellId, containerId, emojiCounts, myReaction);
+}
+
+function renderReactions(cellId, containerId, emojiCounts, myReaction) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    Object.keys(emojiCounts).forEach(emoji => {
+        const badge = document.createElement('div');
+        const isMine = (emoji === myReaction);
+        badge.className = 'reaction-badge' + (isMine ? ' reacted-by-me' : '');
+        badge.innerHTML = `${emoji} <span>${emojiCounts[emoji]}</span>`;
+        badge.onclick = () => toggleReaction(cellId, emoji, containerId);
+        container.appendChild(badge);
+    });
+
+    const addBtnContainer = document.createElement('div');
+    addBtnContainer.style.position = 'relative';
+
+    const addBtn = document.createElement('div');
+    addBtn.className = 'reaction-add-btn';
+    addBtn.innerHTML = '+ 😊';
+    addBtn.onclick = (e) => {
+        e.stopPropagation();
+        toggleEmojiMenu(cellId, containerId, addBtnContainer);
+    };
+
+    addBtnContainer.appendChild(addBtn);
+    container.appendChild(addBtnContainer);
+}
+
+function toggleEmojiMenu(cellId, containerId, parentEl) {
+    closeAllEmojiMenus();
+
+    const menu = document.createElement('div');
+    menu.className = 'emoji-picker-menu';
+    menu.id = 'active-emoji-menu';
+    
+    const baseEmojis = ['❤️', '😂', '😮'];
+    baseEmojis.forEach(emoji => {
+        const opt = document.createElement('div');
+        opt.className = 'emoji-option';
+        opt.innerText = emoji;
+        opt.onclick = (e) => {
+            e.stopPropagation();
+            closeAllEmojiMenus();
+            toggleReaction(cellId, emoji, containerId);
+        };
+        menu.appendChild(opt);
+    });
+
+    const customContainer = document.createElement('div');
+    customContainer.className = 'custom-emoji-input-container';
+    customContainer.onclick = (e) => e.stopPropagation();
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'custom-emoji-input';
+    input.maxLength = 4;
+    input.placeholder = '...';
+    
+    const btnOk = document.createElement('button');
+    btnOk.className = 'custom-emoji-btn';
+    btnOk.innerText = 'OK';
+    btnOk.onclick = (e) => {
+        e.stopPropagation();
+        const val = input.value.trim();
+        if (isValidEmoji(val)) {
+            closeAllEmojiMenus();
+            toggleReaction(cellId, val, containerId);
+        } else {
+            showToast("Veuillez n'entrer qu'un seul emoji !", "error");
+        }
+    };
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            btnOk.click();
+        }
+    });
+
+    customContainer.appendChild(input);
+    customContainer.appendChild(btnOk);
+    menu.appendChild(customContainer);
+
+    parentEl.appendChild(menu);
+    setTimeout(() => input.focus(), 50);
+
+    document.addEventListener('click', closeAllEmojiMenus, { once: true });
+}
+
+function closeAllEmojiMenus() {
+    const existingMenu = document.getElementById('active-emoji-menu');
+    if (existingMenu) existingMenu.remove();
+}
+
+async function toggleReaction(cellId, emoji, containerId) {
+    if (!currentUser) return;
+
+    const { data: existing } = await supabaseClient
+        .from('photo_reactions')
+        .select('*')
+        .eq('bingo_cell_id', cellId)
+        .eq('reactor_id', currentUser.id)
+        .maybeSingle();
+
+    if (existing && existing.emoji === emoji) {
+        await supabaseClient.from('photo_reactions').delete().eq('id', existing.id);
+    } else if (existing) {
+        await supabaseClient.from('photo_reactions').update({ emoji: emoji }).eq('id', existing.id);
+    } else {
+        await supabaseClient.from('photo_reactions').insert({
+            bingo_cell_id: cellId,
+            reactor_id: currentUser.id,
+            emoji: emoji
+        });
+    }
+
+    loadReactions(cellId, containerId);
+}

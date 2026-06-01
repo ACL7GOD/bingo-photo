@@ -156,6 +156,57 @@ USING (
     WHERE profiles.id = auth.uid() AND profiles.approved = true
   )
 );
+
+-- =========================================================================
+-- 4. CONFIGURATION DES REACTIONS (EMOJIS)
+-- =========================================================================
+
+-- Création de la table pour les réactions
+CREATE TABLE IF NOT EXISTS public.photo_reactions (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    bingo_cell_id uuid REFERENCES public.bingo_cells(id) ON DELETE CASCADE NOT NULL,
+    reactor_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    emoji text NOT NULL,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+    CONSTRAINT photo_reactions_cell_reactor_key UNIQUE (bingo_cell_id, reactor_id)
+);
+
+-- Activation RLS
+ALTER TABLE public.photo_reactions ENABLE ROW LEVEL SECURITY;
+
+-- Lecture des réactions pour les joueurs approuvés
+CREATE POLICY "Lecture réservée aux joueurs approuvés (reactions)"
+ON public.photo_reactions FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE profiles.id = auth.uid() AND profiles.approved = true
+  )
+);
+
+-- Insertion autorisée aux joueurs approuvés (et avec leur propre ID)
+CREATE POLICY "Insertion de reactions (joueurs approuvés)"
+ON public.photo_reactions FOR INSERT
+TO authenticated
+WITH CHECK (
+  auth.uid() = reactor_id AND
+  EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE profiles.id = auth.uid() AND profiles.approved = true
+  )
+);
+
+-- Modification (Upsert) et suppression de ses propres réactions
+CREATE POLICY "Modification de ses propres reactions"
+ON public.photo_reactions FOR UPDATE
+TO authenticated
+USING (auth.uid() = reactor_id)
+WITH CHECK (auth.uid() = reactor_id);
+
+CREATE POLICY "Suppression de ses propres reactions"
+ON public.photo_reactions FOR DELETE
+TO authenticated
+USING (auth.uid() = reactor_id);
 ```
 
 ### 1.2 Vérifier la création du dossier de stockage (Bucket)

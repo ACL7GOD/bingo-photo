@@ -27,7 +27,7 @@
         <div id="auth-section">
             <!-- ÉTAPE 1 : Pseudo uniquement -->
             <div id="auth-step-pseudo" class="auth-view">
-                <h2>Rejoindre le Bingo</h2>
+                <h2>Connecte toi au Bingo</h2>
                 <input type="text" id="auth-pseudo" placeholder="Pseudo (ex: Jean)">
                 <button class="btn-primary" onclick="checkPseudo()">Continuer</button>
             </div>
@@ -55,14 +55,17 @@
             <p id="welcome-msg"></p>
 
             <!-- ÉCRAN D'ATTENTE DE VALIDATION -->
-            <div id="approval-pending-section" style="display:none; text-align: center; margin: 30px 0; padding: 25px; border-radius: 12px; border: 2px dashed var(--secondary-color); background: #fafafa;">
+            <div id="approval-pending-section"
+                style="display:none; text-align: center; margin: 30px 0; padding: 25px; border-radius: 12px; border: 2px dashed var(--secondary-color); background: #fafafa;">
                 <h3 style="margin-top: 0; color: var(--secondary-color);">⏳ Compte en attente de validation</h3>
                 <p style="font-size: 14px; color: var(--text-muted); line-height: 1.5;">
                     Ton compte a bien été créé !<br>
-                    Un administrateur doit maintenant valider ton compte pour que tu puisses jouer, voir les grilles et envoyer des photos.<br>
+                    Un administrateur doit maintenant valider ton compte pour que tu puisses jouer, voir les grilles et
+                    envoyer des photos.<br>
                     <strong>N'hésite pas à le contacter directement pour lui demander d'activer ton profil !</strong>
                 </p>
-                <button class="btn-primary" onclick="checkUser()" style="width: auto; margin-top: 15px; padding: 10px 20px;">Rafraîchir le statut</button>
+                <button class="btn-primary" onclick="checkUser()"
+                    style="width: auto; margin-top: 15px; padding: 10px 20px;">Rafraîchir le statut</button>
             </div>
 
             <!-- CONTENU DU JEU (affiché uniquement une fois approuvé) -->
@@ -77,12 +80,13 @@
                 <!-- GRILLE PERSO -->
                 <div id="perso-grid-container">
                     <div class="grid" id="grid"></div>
-                    
+
                     <div id="upload-zone" style="display:none;">
                         <h3 id="task-title"></h3>
-                        
+
                         <div id="upload-preview-section" style="display:none;">
-                            <img id="upload-preview-img" src="" style="width: 100%; border-radius: 8px; margin-bottom: 10px;">
+                            <img id="upload-preview-img" src=""
+                                style="width: 100%; border-radius: 8px; margin-bottom: 10px;">
                             <button class="btn-primary" onclick="showUploadInput()">Changer la photo</button>
                         </div>
 
@@ -91,7 +95,8 @@
                             <button class="btn-primary" onclick="uploadPhoto()">Envoie ta photo</button>
                         </div>
 
-                        <button id="btn-delete" class="btn-danger" style="display:none;" onclick="deletePhoto()">Supprimer la photo</button>
+                        <button id="btn-delete" class="btn-danger" style="display:none;"
+                            onclick="deletePhoto()">Supprimer la photo</button>
                         <button class="btn-secondary" onclick="closeUpload()">Annuler</button>
                     </div>
                 </div>
@@ -114,14 +119,17 @@
                 <!-- VUE GRILLE UTILISATEUR -->
                 <div id="user-view-container" class="hidden">
                     <div class="user-view-header">
-                        <button class="btn-secondary" onclick="closeUserGrid()" style="width: auto; margin-bottom: 10px;">← Retour au classement</button>
+                        <button class="btn-secondary" onclick="closeUserGrid()"
+                            style="width: auto; margin-bottom: 10px;">← Retour au classement</button>
                         <h2 id="user-view-title">Bingo de ...</h2>
                     </div>
                     <div class="grid" id="user-grid"></div>
-                    
-                    <div id="user-photo-preview" class="hidden" style="margin-top: 20px; padding: 15px; background: #f8fbff; border-radius: 12px; border: 1px solid #e1e8f0;">
+
+                    <div id="user-photo-preview" class="hidden"
+                        style="margin-top: 20px; padding: 15px; background: #f8fbff; border-radius: 12px; border: 1px solid #e1e8f0;">
                         <h3 id="user-photo-title" style="margin-top: 0;"></h3>
                         <img id="user-photo-img" src="" style="width:100%; border-radius: 8px;">
+                        <div id="user-photo-reactions" class="reactions-container"></div>
                     </div>
                 </div>
             </div>
