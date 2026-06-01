@@ -213,6 +213,32 @@ function formatDisplayName(name) {
     return name;
 }
 
+async function resolveImageUrls(items, pathKey = 'image_url') {
+    const pathsToSign = items.map(item => item[pathKey]).filter(p => p && !p.startsWith('http'));
+    if (pathsToSign.length === 0) {
+        items.forEach(item => {
+            if (item[pathKey] && item[pathKey].startsWith('http')) item._resolvedUrl = item[pathKey];
+        });
+        return;
+    }
+    
+    const { data, error } = await supabaseClient.storage.from('bingo-photos').createSignedUrls(pathsToSign, 3600);
+    if (data) {
+        const urlMap = {};
+        data.forEach(d => {
+            if (!d.error) urlMap[d.path] = d.signedUrl;
+        });
+        items.forEach(item => {
+            const p = item[pathKey];
+            if (p && !p.startsWith('http') && urlMap[p]) {
+                item._resolvedUrl = urlMap[p];
+            } else if (p && p.startsWith('http')) {
+                item._resolvedUrl = p;
+            }
+        });
+    }
+}
+
 async function checkUser() {
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (user) {
@@ -301,20 +327,25 @@ async function loadGrid() {
     const { data: cells } = await supabaseClient.from('bingo_cells').select('*').eq('user_id', currentUser.id);
     const gridDiv = document.getElementById('grid');
     gridDiv.innerHTML = '';
+    
+    await resolveImageUrls(cells || []);
 
     for (let i = 0; i < 25; i++) {
         const cellData = cells.find(c => c.cell_index === i);
         const cell = document.createElement('div');
         cell.className = 'cell' + (cellData ? ' completed' : '');
 
-        if (cellData) {
-            cell.innerHTML = `<img src="${cellData.image_url}">`;
+        if (cellData && cellData._resolvedUrl) {
+            cell.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = cellData._resolvedUrl;
+            cell.appendChild(img);
         } else {
             cell.innerHTML = `<div class="cell-label">${bingoItems[i].emoji}</div>`;
         }
 
         // Toutes les cases sont cliquables pour ajout ou modification/suppression
-        cell.onclick = () => openUpload(i, !!cellData, cellData ? cellData.image_url : null);
+        cell.onclick = () => openUpload(i, !!cellData, cellData ? cellData._resolvedUrl : null);
         gridDiv.appendChild(cell);
     }
 }
@@ -353,7 +384,7 @@ async function loadGlobalGrid() {
 async function showCellGallery(idx) {
     const { data: submissions } = await supabaseClient
         .from('bingo_cells')
-        .select('id, image_url, user_email')
+        .select('id, image_url, user_id, profiles(username)')
         .eq('cell_index', idx);
 
     const overlay = document.getElementById('gallery-overlay');
@@ -363,14 +394,28 @@ async function showCellGallery(idx) {
     galleryTitle.innerText = `${bingoItems[idx].emoji} ${bingoItems[idx].title}`;
     galleryContent.innerHTML = '';
 
+    await resolveImageUrls(submissions || []);
+
     submissions.forEach(sub => {
         const item = document.createElement('div');
         item.className = 'gallery-item';
-        item.innerHTML = `
-            <img src="${sub.image_url}">
-            <p class="user-email">${formatDisplayName(sub.user_email)}</p>
-            <div class="reactions-container" id="reactions-${sub.id}"></div>
-        `;
+        
+        const img = document.createElement('img');
+        if (sub._resolvedUrl) img.src = sub._resolvedUrl;
+        
+        const pEmail = document.createElement('p');
+        pEmail.className = 'user-email';
+        const pseudo = sub.profiles ? sub.profiles.username : 'Joueur anonyme';
+        pEmail.textContent = formatDisplayName(pseudo);
+        
+        const reactContainer = document.createElement('div');
+        reactContainer.className = 'reactions-container';
+        reactContainer.id = `reactions-${sub.id}`;
+        
+        item.appendChild(img);
+        item.appendChild(pEmail);
+        item.appendChild(reactContainer);
+
         galleryContent.appendChild(item);
         loadReactions(sub.id, `reactions-${sub.id}`);
     });
@@ -393,7 +438,7 @@ function calculateBingos(indices) {
 }
 
 async function loadLeaderboard() {
-    const { data: allSubmissions } = await supabaseClient.from('bingo_cells').select('user_id, user_email, cell_index');
+    const { data: allSubmissions } = await supabaseClient.from('bingo_cells').select('user_id, cell_index, profiles(username)');
     const listDiv = document.getElementById('leaderboard-list');
     listDiv.innerHTML = '<p>Chargement du classement...</p>';
 
@@ -402,7 +447,7 @@ async function loadLeaderboard() {
     allSubmissions.forEach(s => {
         if (!usersMap[s.user_id]) {
             usersMap[s.user_id] = {
-                email: s.user_email || 'Joueur anonyme',
+                email: s.profiles ? s.profiles.username : 'Joueur anonyme',
                 indices: []
             };
         }
@@ -435,11 +480,22 @@ async function loadLeaderboard() {
         const displayName = formatDisplayName(user.email);
         item.onclick = () => viewUserGrid(user.id, displayName);
 
-        item.innerHTML = `
-            <div class="leaderboard-rank">${idx + 1}</div>
-            <div class="leaderboard-name">${displayName}</div>
-            <div class="leaderboard-score">${user.bingos} Bingo${user.bingos > 1 ? 's' : ''} (${user.points} 🖼️)</div>
-        `;
+        const rankDiv = document.createElement('div');
+        rankDiv.className = 'leaderboard-rank';
+        rankDiv.textContent = idx + 1;
+        
+        const nameDiv = document.createElement('div');
+        nameDiv.className = 'leaderboard-name';
+        nameDiv.textContent = displayName;
+        
+        const scoreDiv = document.createElement('div');
+        scoreDiv.className = 'leaderboard-score';
+        scoreDiv.textContent = `${user.bingos} Bingo${user.bingos > 1 ? 's' : ''} (${user.points} 🖼️)`;
+
+        item.appendChild(rankDiv);
+        item.appendChild(nameDiv);
+        item.appendChild(scoreDiv);
+        
         listDiv.appendChild(item);
     });
 }
@@ -454,14 +510,19 @@ async function viewUserGrid(userId, userEmail) {
     const gridDiv = document.getElementById('user-grid');
     gridDiv.innerHTML = '';
 
+    await resolveImageUrls(cells || []);
+
     for (let i = 0; i < 25; i++) {
         const cellData = cells.find(c => c.cell_index === i);
         const cell = document.createElement('div');
         cell.className = 'cell' + (cellData ? ' completed' : '');
 
-        if (cellData) {
-            cell.innerHTML = `<img src="${cellData.image_url}">`;
-            cell.onclick = () => showUserPhoto(cellData.id, cellData.image_url, bingoItems[i].title);
+        if (cellData && cellData._resolvedUrl) {
+            cell.innerHTML = '';
+            const img = document.createElement('img');
+            img.src = cellData._resolvedUrl;
+            cell.appendChild(img);
+            cell.onclick = () => showUserPhoto(cellData.id, cellData._resolvedUrl, bingoItems[i].title);
         } else {
             cell.innerHTML = `<div class="cell-label">${bingoItems[i].emoji}</div>`;
         }
@@ -526,14 +587,27 @@ async function deletePhoto() {
     const confirmed = await showConfirm("Veux-tu vraiment supprimer cette photo ?", "Suppression");
     if (!confirmed) return;
 
+    // Get image_url (path) to delete the physical file
+    const { data: existingCell } = await supabaseClient
+        .from('bingo_cells')
+        .select('image_url')
+        .eq('user_id', currentUser.id)
+        .eq('cell_index', selectedIdx)
+        .maybeSingle();
+
     const { error } = await supabaseClient
         .from('bingo_cells')
         .delete()
         .eq('user_id', currentUser.id)
         .eq('cell_index', selectedIdx);
 
-    if (error) showToast("Erreur suppression : " + error.message, "error");
-    else {
+    if (error) {
+        showToast("Erreur suppression : " + error.message, "error");
+    } else {
+        // Delete from storage if it was a relative path (not full url)
+        if (existingCell && existingCell.image_url && !existingCell.image_url.startsWith('http')) {
+            await supabaseClient.storage.from('bingo-photos').remove([existingCell.image_url]);
+        }
         showToast("Photo supprimée !");
         closeUpload();
         loadGrid();
@@ -608,19 +682,28 @@ async function uploadPhoto() {
 
         if (uploadError) return showToast("Erreur upload : " + uploadError.message, "error");
 
-        const { data: { publicUrl } } = supabaseClient.storage.from('bingo-photos').getPublicUrl(fileName);
+        // Check if old photo exists to delete it
+        const { data: existingCell } = await supabaseClient
+            .from('bingo_cells')
+            .select('image_url')
+            .eq('user_id', currentUser.id)
+            .eq('cell_index', selectedIdx)
+            .maybeSingle();
 
-        const displayName = currentUser.user_metadata?.username || currentUser.email;
-
+        // Save path instead of publicUrl, omit user_email for security
         const { error: dbError } = await supabaseClient.from('bingo_cells').upsert({
             user_id: currentUser.id,
             cell_index: selectedIdx,
-            image_url: publicUrl,
-            user_email: displayName
+            image_url: fileName
         }, { onConflict: 'user_id,cell_index' });
 
-        if (dbError) showToast("Erreur DB : " + dbError.message, "error");
-        else {
+        if (dbError) {
+            showToast("Erreur DB : " + dbError.message, "error");
+        } else {
+            // Delete old file from storage
+            if (existingCell && existingCell.image_url && !existingCell.image_url.startsWith('http')) {
+                await supabaseClient.storage.from('bingo-photos').remove([existingCell.image_url]);
+            }
             showToast("Photo ajoutée ! 📸");
             fileInput.value = ""; // Vider l'input
             closeUpload();
@@ -663,7 +746,7 @@ async function loadReactions(cellId, containerId) {
 
     const { data: reactions, error } = await supabaseClient
         .from('photo_reactions')
-        .select('*')
+        .select('*, profiles(username)')
         .eq('bingo_cell_id', cellId);
 
     if (error) {
@@ -684,11 +767,8 @@ async function loadReactions(cellId, containerId) {
         }
         emojiCounts[r.emoji]++;
 
-        if (r.reactor_email) {
-            emojiReactors[r.emoji].push(formatDisplayName(r.reactor_email));
-        } else {
-            emojiReactors[r.emoji].push("Anonyme");
-        }
+        const pseudo = r.profiles ? r.profiles.username : 'Anonyme';
+        emojiReactors[r.emoji].push(formatDisplayName(pseudo));
 
         if (currentUser && r.reactor_id === currentUser.id) {
             myReaction = r.emoji;
@@ -715,7 +795,12 @@ function renderReactions(cellId, containerId, emojiCounts, emojiReactors, myReac
         const badge = document.createElement('div');
         const isMine = (emoji === myReaction);
         badge.className = 'reaction-badge' + (isMine ? ' reacted-by-me' : '');
-        badge.innerHTML = `${emoji} <span>${emojiCounts[emoji]}</span>`;
+        
+        const emojiNode = document.createTextNode(`${emoji} `);
+        const countSpan = document.createElement('span');
+        countSpan.textContent = emojiCounts[emoji];
+        badge.appendChild(emojiNode);
+        badge.appendChild(countSpan);
 
         // Long press pour voir qui a réagi sans déclencher le clic normal
         let pressTimer;
@@ -836,7 +921,6 @@ async function toggleReaction(cellId, emoji, containerId) {
         await supabaseClient.from('photo_reactions').insert({
             bingo_cell_id: cellId,
             reactor_id: currentUser.id,
-            reactor_email: currentUser.email,
             emoji: emoji
         });
     }
@@ -890,7 +974,18 @@ function showReactionsModal(reactionsList) {
             row.style.display = 'flex';
             row.style.justifyContent = 'space-between';
             row.style.alignItems = 'center';
-            row.innerHTML = `<span style="font-weight: 500;">${item.name}</span> <span style="font-size:20px;">${item.emoji}</span>`;
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.style.fontWeight = '500';
+            nameSpan.textContent = item.name;
+            
+            const emojiSpan = document.createElement('span');
+            emojiSpan.style.fontSize = '20px';
+            emojiSpan.textContent = item.emoji;
+            
+            row.appendChild(nameSpan);
+            row.appendChild(emojiSpan);
+            
             listContainer.appendChild(row);
         });
     }

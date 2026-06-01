@@ -56,6 +56,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Contrainte d'unicité sur le pseudo (insensible à la casse)
+CREATE UNIQUE INDEX IF NOT EXISTS profiles_username_lower_idx ON public.profiles (lower(username));
+
 -- Activation de la sécurité RLS sur la table des profils
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
@@ -93,7 +96,6 @@ CREATE TABLE IF NOT EXISTS public.bingo_cells (
     user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
     cell_index integer NOT NULL,
     image_url text,
-    user_email text,
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
     CONSTRAINT bingo_cells_user_id_cell_index_key UNIQUE (user_id, cell_index)
 );
@@ -134,9 +136,9 @@ WITH CHECK (
 -- 3. CONFIGURATION DU STOCKAGE ET DES DROITS (PHOTOS)
 -- =========================================================================
 
--- Création automatique du dossier de stockage 'bingo-photos' s'il n'existe pas
+-- Création automatique du dossier de stockage 'bingo-photos' s'il n'existe pas (Le bucket est PRIVÉ)
 INSERT INTO storage.buckets (id, name, public) 
-VALUES ('bingo-photos', 'bingo-photos', true)
+VALUES ('bingo-photos', 'bingo-photos', false)
 ON CONFLICT (id) DO NOTHING;
 
 -- Autoriser la lecture des photos du dossier uniquement aux utilisateurs connectés et approuvés
@@ -185,7 +187,6 @@ CREATE TABLE IF NOT EXISTS public.photo_reactions (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     bingo_cell_id uuid REFERENCES public.bingo_cells(id) ON DELETE CASCADE NOT NULL,
     reactor_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-    reactor_email text,
     emoji text NOT NULL,
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
     CONSTRAINT photo_reactions_cell_reactor_key UNIQUE (bingo_cell_id, reactor_id)
@@ -220,13 +221,22 @@ WITH CHECK (
 CREATE POLICY "Modification de ses propres reactions"
 ON public.photo_reactions FOR UPDATE
 TO authenticated
-USING (auth.uid() = reactor_id)
-WITH CHECK (auth.uid() = reactor_id);
+USING (
+  auth.uid() = reactor_id AND
+  EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.approved = true)
+)
+WITH CHECK (
+  auth.uid() = reactor_id AND
+  EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.approved = true)
+);
 
 CREATE POLICY "Suppression de ses propres reactions"
 ON public.photo_reactions FOR DELETE
 TO authenticated
-USING (auth.uid() = reactor_id);
+USING (
+  auth.uid() = reactor_id AND
+  EXISTS (SELECT 1 FROM public.profiles WHERE profiles.id = auth.uid() AND profiles.approved = true)
+);
 ```
 
 ### 1.2 Vérifier la création du dossier de stockage (Bucket)
@@ -234,7 +244,7 @@ USING (auth.uid() = reactor_id);
 Grâce au script SQL de l'étape 1.1, le dossier de stockage a été généré automatiquement. Vous pouvez simplement vérifier sa présence :
 
 1. Dans le menu de gauche de Supabase, cliquez sur **Storage**.
-2. Assurez-vous qu'un dossier nommé `bingo-photos` est bien présent et qu'il possède la mention **Public**.
+2. Assurez-vous qu'un dossier nommé `bingo-photos` est bien présent et qu'il est configuré en tant que **Private** (Privé) pour la sécurité des données.
 
 ### 1.3 Désactiver la validation d'e-mail des joueurs
 
