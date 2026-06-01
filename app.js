@@ -704,6 +704,14 @@ function renderReactions(cellId, containerId, emojiCounts, emojiReactors, myReac
 
     container.innerHTML = '';
 
+    let allReactionsList = [];
+    Object.keys(emojiReactors).forEach(emj => {
+        emojiReactors[emj].forEach(name => {
+            allReactionsList.push(`${name} ${emj}`);
+        });
+    });
+    const fullReactorsString = allReactionsList.length > 0 ? allReactionsList.join(' • ') : 'Aucune réaction';
+
     Object.keys(emojiCounts).forEach(emoji => {
         const badge = document.createElement('div');
         const isMine = (emoji === myReaction);
@@ -719,8 +727,7 @@ function renderReactions(cellId, containerId, emojiCounts, emojiReactors, myReac
             isLongPress = false;
             pressTimer = setTimeout(() => {
                 isLongPress = true;
-                const names = emojiReactors[emoji].length > 0 ? emojiReactors[emoji].join(', ') : 'Anonyme';
-                showToast(`${emoji} : ${names}`, "success");
+                showToast(fullReactorsString, "success");
             }, 500);
         };
         badge.onpointerup = () => clearTimeout(pressTimer);
