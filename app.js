@@ -707,10 +707,9 @@ function renderReactions(cellId, containerId, emojiCounts, emojiReactors, myReac
     let allReactionsList = [];
     Object.keys(emojiReactors).forEach(emj => {
         emojiReactors[emj].forEach(name => {
-            allReactionsList.push(`${name} ${emj}`);
+            allReactionsList.push({ name: name, emoji: emj });
         });
     });
-    const fullReactorsString = allReactionsList.length > 0 ? allReactionsList.join(' • ') : 'Aucune réaction';
 
     Object.keys(emojiCounts).forEach(emoji => {
         const badge = document.createElement('div');
@@ -727,7 +726,7 @@ function renderReactions(cellId, containerId, emojiCounts, emojiReactors, myReac
             isLongPress = false;
             pressTimer = setTimeout(() => {
                 isLongPress = true;
-                showToast(fullReactorsString, "success");
+                showReactionsModal(allReactionsList);
             }, 500);
         };
         badge.onpointerup = () => clearTimeout(pressTimer);
@@ -843,4 +842,76 @@ async function toggleReaction(cellId, emoji, containerId) {
     }
 
     loadReactions(cellId, containerId);
+}
+
+function showReactionsModal(reactionsList) {
+    const overlay = document.createElement('div');
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.width = '100vw';
+    overlay.style.height = '100vh';
+    overlay.style.backgroundColor = 'rgba(0,0,0,0.5)';
+    overlay.style.zIndex = '10000';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+    
+    const modal = document.createElement('div');
+    modal.style.backgroundColor = 'white';
+    modal.style.borderRadius = '12px';
+    modal.style.padding = '20px';
+    modal.style.width = '90%';
+    modal.style.maxWidth = '320px';
+    modal.style.maxHeight = '70vh';
+    modal.style.display = 'flex';
+    modal.style.flexDirection = 'column';
+    modal.style.boxShadow = '0 10px 25px rgba(0,0,0,0.2)';
+    
+    const title = document.createElement('h3');
+    title.innerText = 'Réactions';
+    title.style.marginTop = '0';
+    title.style.marginBottom = '15px';
+    title.style.textAlign = 'center';
+    modal.appendChild(title);
+    
+    const listContainer = document.createElement('div');
+    listContainer.style.overflowY = 'auto';
+    listContainer.style.flexGrow = '1';
+    listContainer.style.paddingRight = '5px';
+    
+    if (reactionsList.length === 0) {
+        listContainer.innerHTML = '<p style="text-align:center; color:#888; font-size:14px;">Aucune réaction</p>';
+    } else {
+        reactionsList.forEach(item => {
+            const row = document.createElement('div');
+            row.style.padding = '10px 0';
+            row.style.borderBottom = '1px solid #f1f5f9';
+            row.style.display = 'flex';
+            row.style.justifyContent = 'space-between';
+            row.style.alignItems = 'center';
+            row.innerHTML = `<span style="font-weight: 500;">${item.name}</span> <span style="font-size:20px;">${item.emoji}</span>`;
+            listContainer.appendChild(row);
+        });
+    }
+    modal.appendChild(listContainer);
+    
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'btn-secondary';
+    closeBtn.innerText = 'Fermer';
+    closeBtn.style.marginTop = '20px';
+    closeBtn.style.width = '100%';
+    closeBtn.style.padding = '10px';
+    closeBtn.onclick = () => document.body.removeChild(overlay);
+    modal.appendChild(closeBtn);
+    
+    overlay.appendChild(modal);
+    
+    overlay.onclick = (e) => {
+        if (e.target === overlay) {
+            document.body.removeChild(overlay);
+        }
+    };
+    
+    document.body.appendChild(overlay);
 }
