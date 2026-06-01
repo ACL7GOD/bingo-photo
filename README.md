@@ -190,6 +190,10 @@ Pour faciliter l'inscription, l'application demande uniquement un pseudo aux jou
 
 ### 1.5 Valider et activer les joueurs (Administrateur)
 
+> [!NOTE]
+> **Cette étape n'est pas à réaliser immédiatement.**
+> Vous y reviendrez plus tard, une fois que l'application sera déployée et que les joueurs auront commencé à s'inscrire.
+
 Par défaut, tous les nouveaux inscrits ont la case `approved` à `false` (Désactivé) et ne peuvent rien voir ni envoyer de photos (leurs requêtes de chargement de grille renverront une grille vide).
 
 Pour autoriser un nouveau joueur à participer :
@@ -200,7 +204,6 @@ Pour autoriser un nouveau joueur à participer :
 5. Dès que c'est fait, le joueur peut rafraîchir sa page pour accéder instantanément au Bingo et commencer à jouer !
 
 ---
----
 
 ## 2. Hébergement du code sur GitHub
 
@@ -208,7 +211,7 @@ GitHub permettra de stocker le code de votre projet et de le lier à Vercel pour
 
 1. Allez sur [GitHub](https://github.com/) et créez un compte gratuit.
 2. Créez un nouveau dépôt public (Repository).
-3. Importez (uploadez) les fichiers suivants de votre projet (y compris votre fichier `app.js` modifié avec vos clés Supabase) :
+3. Importez (uploadez) les fichiers suivants de votre projet (après avoir modifié votre fichier `app.js` avec vos clés Supabase) :
    * `index.html`
    * `style.css`
    * `app.js`
@@ -220,15 +223,18 @@ GitHub permettra de stocker le code de votre projet et de le lier à Vercel pour
 Vercel va héberger le site web du Bingo et le rendre accessible publiquement sur Internet. Il redéploiera automatiquement le site dès que vous ferez des modifications sur GitHub.
 
 1. Allez sur [Vercel](https://vercel.com/) et connectez-vous avec votre compte GitHub (**Continue with GitHub**).
-2. Une fois connecté, cliquez sur le bouton **Add New...** puis sur **Project**.
-3. Importez le dépôt GitHub créé à l'étape 2.
-4. Laissez toutes les configurations par défaut et cliquez sur **Deploy**.
-5. Après quelques secondes, Vercel génère une adresse publique (basée par défaut sur le nom de votre dépôt GitHub, ex: `https://nom-du-repo.vercel.app`). C'est cette adresse qu'il faudra envoyer aux joueurs !
+2. Allez sur [Vercel New Project](https://vercel.com/). Sous la section **Import Git Repository** à gauche, cliquez sur le bouton **Continue with GitHub** (si on vous le demande) puis **Install** pour autoriser Vercel à voir le code sur votre Github. Si vous avez plusieurs repositories, vous pouvez choisir *Only select repositories* pour ne donner accès qu'au dépôt **`bingo-photo`**, puis cliquez sur le bouton **Install**.
+3. Une fois que le repo apparait dans Vercel, cliquez sur **Import**.
+   - *(Optionnel)* Dans le champ **Project Name**, vous pouvez modifier le nom par défaut (`bingo-photo`). C'est ce nom qui déterminera l'adresse web par défaut de votre site (par exemple, en saisissant `bingo-tapages`, votre site aura l'adresse `https://bingo-tapages.vercel.app`).
+   - Laissez toutes les autres configurations par défaut et cliquez sur le bouton **Deploy** (Déployer).
+4. Après quelques secondes, Vercel aura déployé le site. Vous pouvez retourner sur [Vercel](https://vercel.com/), cliquer sur votre projet et voir l'URL sous *Domains* à partager aux joueurs. Si nécessaire, vous pouvez ajouter un nom personnalisé en cliquant sur le bouton **+** (ou sur le lien) situé à droite de **Domains**, saisir le nom souhaité (ex: `bingo-tapages.vercel.app`), puis cliquer sur **Add** (Ajouter).
 
-> [!TIP]
-> **Personnaliser l'adresse de votre site (URL) :**
-> Par défaut, Vercel génère un nom automatique. Pour choisir l'adresse de votre choix (ex: `https://bingo-tapages.vercel.app`) :
-> 1. Sur la page d'accueil de Vercel, cliquez sur votre projet.
-> 2. Sur la page d'accueil du projet (onglet **Overview**), repérez la section **Domains** sur la droite.
-> 3. Cliquez sur le bouton **+** (ou sur le lien) situé à droite de **Domains**.
-> 4. Saisissez le nom souhaité (ex: `bingo-tapages.vercel.app`), puis cliquez sur **Add** (Ajouter).
+---
+
+## 🎉 C'est prêt !
+
+Votre Bingo Photo est maintenant entièrement fonctionnel et en ligne. Vous pouvez partager l'adresse finale de Vercel avec vos joueurs.
+
+> [!IMPORTANT]
+> **Rappel de validation :**
+> N'oubliez pas de retourner à la section **[1.5 Valider et activer les joueurs](#15-valider-et-activer-les-joueurs-administrateur)** pour activer les comptes de vos joueurs dès qu'ils se seront inscrits pour la première fois !
