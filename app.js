@@ -1,12 +1,12 @@
 // --- CONFIGURATION --- 
-const SUPABASE_PROJECT_ID = "zgdjtfyidavwtphfrrvf";
-const SUPABASE_KEY = "sb_publishable_4sW5qMxacEbyWez5TruoAQ_lCQAfJl5";
+const SUPABASE_PROJECT_ID = "tmhmsmlbvlckeiqeliqb";
+const SUPABASE_KEY = "sb_publishable_uHcmq3mdV7jw6tFOQOhH5w_L4Vwwvls";
 const supabaseClient = supabase.createClient(`https://${SUPABASE_PROJECT_ID}.supabase.co`, SUPABASE_KEY);
 
 let currentUser = null;
 let selectedIdx = null;
 const bingoItems = [
-    { title: "Un chien dans une voiture", emoji: "🐶🚗" },
+    { title: "Boire un white Cha (God)", emoji: "🍼" },
     { title: "Du love chez les Tapages", emoji: "❤️" },
     { title: "Tes pieds dans les chaussures d'un autre Tapage", emoji: "👞" },
     { title: "Un Tapage pas encore couché au lever du soleil", emoji: "🥱" },
